@@ -23,8 +23,7 @@ export OPENAI_TTS_MODEL="$openai_model"
 
 # Optional: sanity check
 if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-  echo "ERROR: Google credentials not found at $GOOGLE_APPLICATION_CREDENTIALS" >&2
-  exit 1
+  echo "WARNING: Google credentials not found at $GOOGLE_APPLICATION_CREDENTIALS" >&2
 fi
 
 # Launch your modified Wyoming server.
