@@ -15,11 +15,15 @@ streaming=$(jq -r '.streaming // true' "$CONFIG_PATH")
 creds=$(jq -r '.gcp_credentials_path // "/config/google/tts-sa.json"' "$CONFIG_PATH")
 openai_key=$(jq -r '.openai_api_key // ""' "$CONFIG_PATH")
 openai_model=$(jq -r '.openai_model // "gpt-4o-mini-tts"' "$CONFIG_PATH")
+openai_base=$(jq -r '.openai_base_url // ""' "$CONFIG_PATH")
+custom_voices_path=$(jq -r '.custom_voices_path // ""' "$CONFIG_PATH")
 
 # Export settings
 export GOOGLE_APPLICATION_CREDENTIALS="$creds"
 export OPENAI_API_KEY="${openai_key}"
 export OPENAI_TTS_MODEL="$openai_model"
+export OPENAI_base_url="${openai_base}"
+export CUSTOM_VOICES_PATH="${custom_voices_path}"
 
 # Optional: sanity check
 if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then

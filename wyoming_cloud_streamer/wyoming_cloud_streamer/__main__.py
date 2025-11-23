@@ -44,8 +44,48 @@ async def main() -> None:
     _LOGGER.debug(args)
 
 
-    with open("/app/wyoming_cloud_streamer/voices.json", "r", encoding="utf-8") as f:
-        voices_data = json.load(f)
+    # Load builtin voices first. For Home Assistant add-on layout the
+    # file is available at `/app/wyoming_cloud_streamer/voices.json`.
+    voices_file = "/app/wyoming_cloud_streamer/voices.json"
+    try:
+        with open(voices_file, "r", encoding="utf-8") as f:
+            voices_data = json.load(f)
+    except FileNotFoundError:
+        _LOGGER.exception("Builtin voices.json not found at %s", voices_file)
+        raise
+
+    # Optionally merge a user-provided custom voices JSON file. The path
+    # can be provided via the `CUSTOM_VOICES_PATH` environment variable.
+    # The file should be a JSON object with the same shape as `voices.json`.
+    custom_path = os.getenv("CUSTOM_VOICES_PATH", "")
+    if custom_path:
+        try:
+            custom_file = Path(custom_path)
+            if custom_file.exists():
+                with open(custom_file, "r", encoding="utf-8") as cf:
+                    custom_data = json.load(cf)
+                # Merge provider keys; for lists we keep unique entries while
+                # preserving order (existing first, then custom additions).
+                for provider, pdata in custom_data.items():
+                    if provider not in voices_data:
+                        voices_data[provider] = pdata
+                        continue
+                    # Merge 'voices' list
+                    base_voices = voices_data[provider].get("voices", [])
+                    for v in pdata.get("voices", []):
+                        if v not in base_voices:
+                            base_voices.append(v)
+                    voices_data[provider]["voices"] = base_voices
+                    # Merge 'languages' list
+                    base_langs = voices_data[provider].get("languages", [])
+                    for l in pdata.get("languages", []):
+                        if l not in base_langs:
+                            base_langs.append(l)
+                    voices_data[provider]["languages"] = base_langs
+            else:
+                _LOGGER.warning("CUSTOM_VOICES_PATH set but file does not exist: %s", custom_path)
+        except Exception as exc:
+            _LOGGER.exception("Failed to load custom voices from %s: %s", custom_path, exc)
 
     voices = []
     for key in voices_data.keys():
@@ -64,6 +104,12 @@ async def main() -> None:
                     voice_description = "openai_"+voice
                     attribution=Attribution(
                             name="OpenAI", url="https://platform.openai.com/docs/guides/text-to-speech"
+                        )
+                else:
+                    voice_name = voice
+                    voice_description = key+"_"+voice
+                    attribution=Attribution(
+                            name=key.capitalize(), url=""
                         )
                 voices.append(
                     TtsVoice(

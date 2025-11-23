@@ -79,7 +79,18 @@ class OpenAITTSEngine(BaseTTSEngine):
     async def stream(
         self, text: str, voice_name: str, cli_args
     ) -> AsyncGenerator[Tuple[str, object], None]:
-        client = OpenAI()
+        # Allow using a 3rd-party OpenAI-compatible API by reading
+        # OPENAI_API_KEY and OPENAI_base_url from the environment and
+        # passing them to the OpenAI client constructor if present.
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_base_url")
+        client_kwargs = {}
+        if api_key:
+            client_kwargs["api_key"] = api_key
+        if base_url:
+            # The official SDK accepts base_url for custom endpoints.
+            client_kwargs["base_url"] = base_url
+        client = OpenAI(**client_kwargs) if client_kwargs else OpenAI()
         voice = self._parse_voice(voice_name)
 
         # Resolve model precedence: ENV > default
