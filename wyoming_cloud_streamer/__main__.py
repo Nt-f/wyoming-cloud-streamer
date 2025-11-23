@@ -106,7 +106,7 @@ async def main() -> None:
                             name="OpenAI", url="https://platform.openai.com/docs/guides/text-to-speech"
                         )
                 else:
-                    voice_name = voice
+                    voice_name = language.replace('_', '-', 1)+"-"+key+"-"+voice
                     voice_description = key+"_"+voice
                     attribution=Attribution(
                             name=key.capitalize(), url=""
